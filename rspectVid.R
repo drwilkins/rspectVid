@@ -4,7 +4,7 @@
 #Install/load pacman
 if(!require(pacman)){install.packages("pacman");require(pacman)}
 #Install/load tons of packages
-p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png)
+p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools)
 
 ##########
 # rspect: Custom function for generating ggplot spectrogram objects in R
@@ -12,7 +12,7 @@ p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png)
 #Parameter descriptions:
   # *- These parameters are really important for the look of your spectrogram
 
-  # waveFile: filenames should be relative to working directory (e.g. "song examples/1.wav")
+  # soundFile: filenames should be relative to working directory (e.g. "song examples/1.wav"); handles .mp3 and .wav
   # dest_folder: needs to be like "figures/spectrograms/" to refer within working directory
   # if outFilename is left out, will use input (.wav) name in output filename
   # *colPal: color palette; one of "viridis","magma","plasma","inferno","cividis" from the viridis package (see: https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html) OR a 2 value vector (e.g. c("white","black)), defining the starts and ends of a custom color gradient
@@ -26,36 +26,42 @@ p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png)
   # wn: window name (slight tweaks on algorithm that affect smoothness of output) see ?spectro
   # colbins: default 30: increasing can smooth the color contours, but take longer to generate spec
 
-testSpec<-function(waveFile,dest_folder,outFilename,colPal,Xlim,Ylim,plotLegend,onlyPlotSpec,ampTrans,filterThresh,min_dB,bg,wl,ovlp,wn,specWidth,specHeight,colbins,...)
+testSpec<-function(soundFile,dest_folder,outFilename,colPal,Xlim,Ylim,plotLegend,onlyPlotSpec,ampTrans,filterThresh,min_dB,bg,wl,ovlp,wn,specWidth,specHeight,colbins,...)
 {
-  if(missing(colPal)){colPal="inferno"}
-  if(missing(dest_folder)){dest_folder=dirname(waveFile)}#Put in wavefile directory if unspecified
+  #Put in soundFile directory if unspecified
+  if(missing(dest_folder)){dest_folder=dirname(soundFile)}
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it
-  if(missing(outFilename)){outFilename=paste0(tools::file_path_sans_ext(basename(waveFile)),".PNG")}
+  
+  #Convert MP3s to WAV
+  if(file_ext(soundFile)=="mp3"){
+      print("***Converting mp3(s) to wav***")
+      try(mp32wav(path=dirname(soundFile)))
+      soundFile=paste0(dirname(soundFile),"/",file_path_sans_ext(basename(soundFile)),".wav")
+      }
+  
+  wav0<-readWave(soundFile)
+  file_dur<-max(length(wav0@left),length(wav0@right))/wav0@samp.rate  
+  
+  if(missing(outFilename)){outFilename=paste0(file_path_sans_ext(basename(soundFile)),".PNG")}
+  if(missing(colPal)){colPal="inferno"}
   if(!grepl(".png|PNG",outFilename)){outFilename=paste0(outFilename,".png")}#if user didn't put suffix onto output filename, add .jpeg
   if(missing(Ylim)){Ylim=c(0,10)}
-  if(missing(plotLegend)){plotLegend=T}
-  if(missing(onlyPlotSpec)){onlyPlotSpec=F}
+  if(missing(plotLegend)){plotLegend=F}
+  if(missing(onlyPlotSpec)){onlyPlotSpec=T}
   if(missing(min_dB)){min_dB=-30}
   #Are we dealing with a custom or a viridis palette?
   if(length(colPal)==1){isViridis<-T}else{isViridis<-F}
   if(missing(bg)){ 
     if(isViridis){pal=eval(parse(text=paste0("viridis::",colPal)));bg=pal(1)}else{bg=colPal[1]}}#set background color as palette level 1 if missing
   if(missing(filterThresh)){filterThresh=0}
-  wav0<-readWave(waveFile)
   if(missing(wl)){wl=512}
   if(missing(ovlp)){ovlp=90}
   if(missing(wn)){wn="blackman"}
   if(missing(specWidth)){specWidth=6}
   if(missing(specHeight)){specHeight=2}
   if(missing(colbins)){colbins=30}
-  if(missing(ampTrans)){ampTrans=1}
-
-  
-  
+  if(missing(ampTrans)){ampTrans=2.5}
   if(filterThresh==0){wav<-wav0}else{wav<-afilter(wav0,f=wav0@samp.rate,threshold=filterThresh,plot=F)}
-
-  file_dur<-max(length(wav0@left),length(wav0@right))/wav0@samp.rate  
 
   G<-ggspectro(wav,f=wav0@samp.rate,ovlp=ovlp,wl=wl,wn=wn,flim=Ylim,...)
   G2<-G+stat_contour(geom="polygon",aes(fill=..level..),bins=colbins)+theme_bw() +theme(panel.background=element_rect(fill=bg),panel.grid.major=element_blank(),panel.grid.minor=element_blank())
@@ -69,23 +75,24 @@ testSpec<-function(waveFile,dest_folder,outFilename,colPal,Xlim,Ylim,plotLegend,
     G5<-G4+scale_fill_gradient(limits=c(min_dB,0),na.value="transparent",low=colPal[1],high=colPal[2],trans=scales::modulus_trans(p=ampTrans))
   }
   if(onlyPlotSpec){G5<-G5+theme_void()+ theme(legend.position="none",plot.background=element_rect(fill=bg))}
-    
+    plot(G5)
 #return spec parameters
-  specParams=list(waveFile=waveFile,dest_folder=dest_folder,outFilename=outFilename,colPal=colPal,Xlim=Xlim,Ylim=Ylim,plotLegend=plotLegend,onlyPlotSpec=onlyPlotSpec,ampTrans=ampTrans,filterThresh=filterThresh,min_dB=min_dB,bg=bg,wl=wl,ovlp=ovlp,wn=wn,specWidth=specWidth,specHeight=specHeight,colbins=colbins,file_dur=file_dur,spec=G5)
+    specParams=list(soundFile=soundFile,dest_folder=dest_folder,outFilename=outFilename,colPal=colPal,Xlim=Xlim,Ylim=Ylim,plotLegend=plotLegend,onlyPlotSpec=onlyPlotSpec,ampTrans=ampTrans,filterThresh=filterThresh,min_dB=min_dB,bg=bg,wl=wl,ovlp=ovlp,wn=wn,specWidth=specWidth,specHeight=specHeight,colbins=colbins,file_dur=file_dur,spec=G5)
 }#end testSpec
 
-
+#############################################################
 #Function for outputting a video of spectrogram
-
-rspectVid<-function(specParams,framerate,vidName,... )
+rspectVid<-function(specParams,vidName,framerate,highlightCol,... )
 {
   #Address missing variables
-  if(missing(framerate)){framerate=25}
-  if(missing(vidName)){vidName=paste0(tools::file_path_sans_ext(specParams$waveFile),".mp4")}
+  if(missing(framerate)){framerate=30}
+  if(missing(vidName)){vidName=paste0(tools::file_path_sans_ext(specParams$soundFile),".mp4")}
+  if(missing(highlightCol)){highlightCol="gray50"}
   
-  #Save background spectrogram PNG using tested parameters
-    out<-paste0(specParams$dest_folder,specParams$outFilename)
-    ggsave(out,dpi=300,width=specParams$specWidth,height=specParams$specHeight,units="in")
+  #Save background spectrogram PNG to temp directory using tested parameters
+    tempdir<-dir.create("temp/",showWarnings=F)
+    out<-paste0("temp/",specParams$outFilename)
+    ggsave(filename=out,plot=specParams$spec,dpi=300,width=specParams$specWidth,height=specParams$specHeight,units="in")
     print(paste0("Spec saved @ ",out))
  #Read PNG bitmap back in
   spec_PNG<-readPNG(out)
@@ -93,17 +100,18 @@ rspectVid<-function(specParams,framerate,vidName,... )
   spec_height_px<-attributes(spec_PNG)$dim[1]
     
   #Create data frame for highlighting box animation
-   cursor<-c(seq(0,specParams$file_dur,round(specParams$file_dur/framerate,3)),specParams$file_dur)
-  played<-tibble(xmin=rep(specParams$Xlim[1],length(cursor)),ymin=rep(specParams$Ylim[1], length(cursor)),xmax=cursor,ymax=rep(specParams$Ylim[2], length(cursor)) )
+   cursor<-c(seq(0,specParams$file_dur,.1),rep(specParams$file_dur,2))
+  played<-tibble(xmin=cursor,xmax=rep(specParams$file_dur,length(cursor)),ymin=rep(specParams$Ylim[1],length(cursor)),ymax=rep(specParams$Ylim[2], length(cursor)) )
   
   #Make ggplot overlay of highlight box on spectrogram
-  vidSegment<-ggplot(played)+theme_void()+annotation_custom(rasterGrob(spec_PNG,width = unit(1,"npc"),height= unit(1,"npc")))+xlim(specParams$Xlim)+ylim(specParams$Ylim)+geom_rect(aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax),fill="white",alpha=.2)+transition_reveal(along=cursor)
+  vidSegment<-ggplot(played)+annotation_custom(rasterGrob(spec_PNG,width = unit(1,"npc"), height = unit(1,"npc")),- Inf, Inf, -Inf, Inf)+geom_rect(aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax),fill=highlightCol,alpha=.5)+geom_segment(aes(x=xmin,xend=xmin,y=ymin,yend=ymax),col="white")+theme_void()  +transition_reveal(along=cursor,keep_last=F)
 
-animate(vidSegment,renderer=av_renderer(vidName,audio=specParams$waveFile),duration=specParams$file_dur,width=spec_width_px,height=spec_height_px) 
+animate(vidSegment,renderer=av_renderer(vidName,audio=specParams$soundFile),duration=specParams$file_dur,width=spec_width_px,height=spec_height_px,nframes=200) 
   
 }#end rspectVid definition
 
-params<-testSpec("data//Female Barn Swallow 1.wav",dest_folder="temp/",ampTrans = 2.5)
+#Example usage
+params<-testSpec("data/XC500855-Tui.wav",min_dB = -50)
 rspectVid(params)
 
 
