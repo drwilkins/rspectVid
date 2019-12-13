@@ -1,7 +1,3 @@
-``` {r setup,include=F}
-knitr::opts_chunk$set(echo=T)
-``
-
 # rspectVid
 Script for generating a video spectrogram from an audio file
 
