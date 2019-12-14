@@ -1,10 +1,19 @@
 #requires installation of imagemagick 
 # on a mac, run 'brew install imagemagick' in terminal (provided you've already set up Homebrew (https://brew.sh/))  
 
+
+
+
 #Install/load pacman
 if(!require(pacman)){install.packages("pacman");require(pacman)}
 #Install/load tons of packages
-p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools)
+p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools,devtools)
+
+#function taken from https://github.com/trinker/reports/blob/master/R/is.url.R
+is.url <-function(x) { 
+    grepl("www.|http:|https:", x)
+}
+
 
 ##########
 # rspect: Custom function for generating ggplot spectrogram objects in R
@@ -31,6 +40,8 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,Xlim,Ylim,plotLegend
   #Put in soundFile directory if unspecified
   if(missing(dest_folder)){dest_folder=dirname(soundFile)}
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it
+  
+  if(is.url(soundFile)){download.file(soundFile,basename(soundFile));soundFile=basename(soundFile)}
   
   #Convert MP3s to WAV
   if(file_ext(soundFile)=="mp3"){
