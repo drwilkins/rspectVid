@@ -15,8 +15,8 @@ params<-testSpec("data/Female barn swallow 1.wav")
 rspectVid(params) 
 #exports an .mp4 to the same file directory by default
 ```
-![Static Spectrogram]("https://github.com/drwilkins/rspectVid/blob/master/temp/Female barn swallow 1.png")]
-[Link to Dynamic Spectrogram]("https://github.com/drwilkins/rspectVid/blob/master/data/Female barn swallow 1.mp4?raw=true")
+![Static Spectrogram]("https://github.com/drwilkins/rspectVid/blob/master/temp/FemaleBarnSwallow1.png")]
+[Link to Dynamic Spectrogram]("https://github.com/drwilkins/rspectVid/blob/master/data/Femalebarnswallow1.mp4?raw=true")
 
 ###To run source the rspectVid.R script & generate a dynamic spec in a new R instance:
 ```
