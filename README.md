@@ -27,7 +27,8 @@ rspectVid(params)
 #Note, this might take up to 5 min, depending on CPU power...
 require(devtools)
 source_url("https://raw.githubusercontent.com/drwilkins/rspectVid/master/rspectVid.R")
-p<-testSpec("http://www.oceanmammalinst.org/songs/hmpback3.wav")
+p<-testSpec("http://www.oceanmammalinst.org/songs/hmpback3.wav",Ylim=c(0,.7)) 
+#sounds are all <700 Hz, thus the Ylim specification
 rspectVid(p)
 #Voila 🐋
 ```
