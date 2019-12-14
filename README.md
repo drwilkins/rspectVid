@@ -17,14 +17,15 @@ rspectVid(params)
 ```
 
 
-![Static Spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/temp/Female%20barn%20swallow%201.PNG)]
+![Static Spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/temp/Female%20barn%20swallow%201.PNG)
 [Link to Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/data/FemaleBarnSwallow1.mp4)
 
 
 ###To run source the rspectVid.R script & generate a dynamic spec in a new R instance:
 ```
+#Note, this might take up to 5 min, depending on CPU power...
 require(devtools)
-sourceURL("https://raw.githubusercontent.com/drwilkins/rspectVid/master/rspectVid.R")
+source_url("https://raw.githubusercontent.com/drwilkins/rspectVid/master/rspectVid.R")
 p<-testSpec("http://www.oceanmammalinst.org/songs/hmpback3.wav")
 rspectVid(p)
 #Voila 🐋

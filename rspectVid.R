@@ -121,8 +121,5 @@ animate(vidSegment,renderer=av_renderer(vidName,audio=specParams$soundFile),dura
   
 }#end rspectVid definition
 
-#Example usage
-params<-testSpec("data/XC500855-Tui.wav",min_dB = -50)
-rspectVid(params)
 
 
