@@ -11,15 +11,14 @@ Workflow:
 Example usage:
 ```
 #takes .wav or .mp3
-params<-testSpec("data/Female barn swallow 1.wav") 
+params<-testSpec("data/Femalebarnswallow1.wav") 
 rspectVid(params) 
 #exports an .mp4 to the same file directory by default
 ```
 
 
-![Static Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/temp/FemaleBarnSwallow1.png)]
-[Link to Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/data/Femalebarnswallow1.mp4?raw=true)
-
+![Static Spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/temp/Female%20barn%20swallow%201.PNG)]
+[Link to Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/data/FemaleBarnSwallow1.mp4)
 
 
 ###To run source the rspectVid.R script & generate a dynamic spec in a new R instance:
