@@ -1,3 +1,9 @@
+#requires installation of imagemagick 
+# on a mac, run 'brew install imagemagick' in terminal (provided you've already set up Homebrew (https://brew.sh/))  
+
+
+
+
 #Install/load pacman
 if(!require(pacman)){install.packages("pacman");require(pacman)}
 #Install/load tons of packages
@@ -31,13 +37,14 @@ is.url <-function(x) {
   # colbins: default 30: increasing can smooth the color contours, but take longer to generate spec
 
 testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotLegend,onlyPlotSpec,ampTrans,filterThresh,min_dB,bg,wl,ovlp,wn,specWidth,specHeight,colbins,...)
-{
-  #Put in soundFile directory if unspecified
-  if(missing(dest_folder)){dest_folder=dirname(soundFile)}
-  if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it
-  
-  if(is.url(soundFile)){download.file(soundFile,basename(soundFile));soundFile=basename(soundFile)}
-  
+  {
+   #Put in soundFile directory if unspecified
+  if(missing(dest_folder)){
+      if(is.url(soundFile)){dest_folder=getwd()}else{dest_folder=dirname(soundFile)}}
+  if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it  
+  if(is.url(soundFile)){download.file(soundFile,paste0(dest_folder,basename(soundFile)))
+    soundFile=paste0(dest_folder,basename(soundFile))}
+ 
   #Convert MP3s to WAV
   if(file_ext(soundFile)=="mp3"){
       print("***Converting mp3(s) to wav***")
@@ -56,6 +63,8 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   }
   
   ### For long files, ask user to crop and/or segment dynamic spectrograms
+   if(missing(crop)&fileDur<=5)
+      {crop=c(0,fileDur)}
   if(fileDur>5&missing(crop)){
     cat("\n\n*** File duration is >5sec *** \nProcessor intensive warning: Do you want to use the whole recording to make the dynamic spec? (y/n) ")
     cropResp=readline(prompt=">>> ")
@@ -67,24 +76,20 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
     if(length(crop)==1){crop=c(0,crop)}
     }
   }
-  if(missing(crop)&fileDur<=5)
-  {crop=c(0,fileDur)}
+ 
   
   if(missing(xLim)){
     if(fileDur<=5)
-    {xLim=crop;segWavs=list(wav);segLens=xLim}else{ 
+    {xLim=crop;segWavs=list(wav0);segLens=xLim}else{ 
       #if cropped segment is >5s ask to segment (i.e. set xLim)
       cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\nType a number to combine specs for every X.X sec")
       xLimResp=readline(">>> ")
-    if(xLimResp==""){xLim=crop;segWavs=list(wav);segLens=xLim}
-      
-    }
-  }else{
+    if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim}else{
       segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
       indx<- 1:(length(segLens)-1)
       segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
       xLim=c(0,as.numeric(xLimResp))
-      }
+      }}}
   
   if(missing(outFilename)){outFilename=paste0(file_path_sans_ext(basename(soundFile)),".PNG")}
   if(missing(colPal)){colPal="inferno"}
@@ -131,7 +136,8 @@ for (i in 1:length(segWavs))
     }
 #return spec parameters
     specParams[[i]]=list(soundFile=soundFile,dest_folder=dest_folder,outFilename=outFilename,crop=crop,colPal=colPal,xLim=xLim,yLim=yLim,plotLegend=plotLegend,onlyPlotSpec=onlyPlotSpec,ampTrans=ampTrans,filterThresh=filterThresh,min_dB=min_dB,bg=bg,wl=wl,ovlp=ovlp,wn=wn,specWidth=specWidth,specHeight=specHeight,colbins=colbins,fileDur=fileDur,soundDur=unlist(soundDur),spec=G5)
-}
+}#end for loop
+
 plot(specParams[[1]]$spec)
 specParams<-append(specParams,list(segWavs=segWavs))
 return(specParams)
@@ -145,7 +151,7 @@ rspectVid<-function(specParams,vidName,framerate,highlightCol,... )
 {
 if(missing(framerate)){framerate=30}
 if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)}else{
-    iName0<-tools::file_path_sans_ext(specParams[[i]]$outFilename)
+    iName0<-file_path_sans_ext(specParams[[1]]$outFilename)
     vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")}#base name for output, sans extension
 if(missing(highlightCol)){highlightCol="gray50"}
    
@@ -194,7 +200,7 @@ animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=sp
     ffmpegTransCode<-paste0(ffmpeg_exec(),' -y -i "',unlist(file_path_sans_ext(outWAV)),'.mp4" -c copy -f mpegts "',unlist(file_path_sans_ext(outWAV)),'.ts"')
     invisible(sapply(ffmpegTransCode,system))
     #now combine .ts files into .mp4
-   system(paste0(ffmpeg_exec(),' -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -codec copy "',vidName,'"'),timeout=100 )
+   system(paste0(ffmpeg_exec(),' -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -codec copy "',vidName,'"') )
   }
 
   cat("\n\nAll done!\n")
