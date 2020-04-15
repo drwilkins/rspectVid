@@ -13,7 +13,8 @@ p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warb
 is.url <-function(x) { 
     grepl("www.|http:|https:", x)
 }
-
+#set WavPlayer if using Mac; otherwise, mixed results trying to play sounds from R
+if(Sys.info()["sysname"]=="Darwin"){setWavPlayer("/usr/bin/afplay")}
 
 ##########
 # rspect: Custom function for generating ggplot spectrogram objects in R
@@ -62,34 +63,61 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
     if(length(crop)==1){crop=c(0,crop)}
   }
   
+  if(!missing(crop)&!missing(xLim)){
+    segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
+    indx<- 1:(length(segLens)-1)
+    segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
+    cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
+    xLim=c(0,as.numeric(xLimResp))
+  }
+  
+  
+  
   ### For long files, ask user to crop and/or segment dynamic spectrograms
    if(missing(crop)&fileDur<=5)
-      {crop=c(0,fileDur)}
+      {crop=c(0,fileDur);cropWav=NA}
   if(fileDur>5&missing(crop)){
     cat("\n\n*** File duration is >5sec *** \nProcessor intensive warning: Do you want to use the whole recording to make the dynamic spec? (y/n) ")
     cropResp=readline(prompt=">>> ")
-    if(tolower(cropResp)=="y"){crop=c(0,fileDur)}
+    if(tolower(cropResp)=="y"){crop=c(0,fileDur);cropWav=NA}
     if(tolower(cropResp)=="n"){
-     cat("\n\n*** Choose how to crop your dynamic spectrogram ***\nEnter a number to use only the first X.XX sec \nEnter a range c(x1,x2) where x1 is start time & x2 is stop for a specific time segment")
+     cat("\n\n*** Choose how to crop your dynamic spectrogram ***\nEnter a number to use only the first X.XX sec \n\tOR\nEnter a range c(x1,x2) where x1 is start time & x2 is stop for a specific time segment")
       cropResp2=readline(">>> ")
     crop=eval(parse(text=cropResp2))
     if(length(crop)==1){crop=c(0,crop)}
     }
   }
  
+  #crop has been defined at this point
+  cropWid<-crop[2]-crop[1]
   
   if(missing(xLim)){
-    if(fileDur<=5)
-    {xLim=crop;segWavs=list(wav0);segLens=xLim}else{ 
+    # If no spec width provided, but it's a short file, no worries
+    if(cropWid<=5)
+    {xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{ 
       #if cropped segment is >5s ask to segment (i.e. set xLim)
-      cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\nType a number to combine specs for every X.X sec")
+      cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\n\tOR\nType a number to combine specs for every X.X sec")
       xLimResp=readline(">>> ")
-    if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim}else{
-      segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
-      indx<- 1:(length(segLens)-1)
-      segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
-      xLim=c(0,as.numeric(xLimResp))
-      }}}
+      #user chooses not to segment (no multipage spec)
+    if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{
+      #segment the cropped area
+        segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
+        indx<- 1:(length(segLens)-1)
+        segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
+        cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
+        xLim=c(0,as.numeric(xLimResp))
+    }
+  }}else{
+    #If not missing xLim (was just originally missing crop) 
+    #segment the cropped area
+        segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
+        indx<- 1:(length(segLens)-1)
+        segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
+        cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
+        xLim=c(0,as.numeric(xLimResp))
+  }
+  
+  #xLim & crop defined for all cases
   
   if(missing(outFilename)){outFilename=paste0(file_path_sans_ext(basename(soundFile)),".PNG")}
   if(missing(colPal)){colPal="inferno"}
@@ -139,9 +167,10 @@ for (i in 1:length(segWavs))
 }#end for loop
 
 plot(specParams[[1]]$spec)
-specParams<-append(specParams,list(segWavs=segWavs))
+specParams<-append(specParams,list(segWavs=segWavs,cropWav=cropWav))
 return(specParams)
 }#end testSpec
+
 
 
 
