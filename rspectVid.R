@@ -173,7 +173,7 @@ for (i in 1:length(segWavs))
 }#end for loop
 
 plot(specParams[[1]]$spec)
-specParams<-append(specParams,list(segWavs=segWavs,cropWav=cropWav,cropWid=cropWid))
+specParams<-append(specParams,list(segWavs=segWavs,cropWav=cropWav))
 return(specParams)
 }#end testSpec
 

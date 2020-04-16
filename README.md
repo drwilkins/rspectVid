@@ -37,6 +37,7 @@ rspectVid(p)
 ### Now also supports .mp3 files (web or local) and multi-page dynamic spectrograms (i.e. cropping and segmenting spectrograms from larger recording files)
 
 #Example using Xeno-Canto to generate a 5 "page" dynamic spectrogram of a common nighthawk call (w/ different color scheme)
-
+```
 f=testSpec("https://www.xeno-canto.org/sounds/uploaded/SPMWIWZKKC/XC490771-190804_1428_CONI.mp3",crop=20,xLim=4,colPal = c("white","black"))
 rspectVid(f,highlightCol = "#d1b0ff",cursorCol = "#7817ff")
+```
