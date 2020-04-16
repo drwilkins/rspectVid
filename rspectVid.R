@@ -1,5 +1,6 @@
 #requires installation of imagemagick 
 # on a mac, run 'brew install imagemagick' in terminal (provided you've already set up Homebrew (https://brew.sh/))  
+# also requires ffmpeg, which should be installed with gganimate...you can install/update it on mac w/ 'brew install ffmpeg'
 
 
 
@@ -7,7 +8,7 @@
 #Install/load pacman
 if(!require(pacman)){install.packages("pacman");require(pacman)}
 #Install/load tons of packages
-p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools,devtools,ari)
+p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools,devtools,ari,lubridate)
 
 #function taken from https://github.com/trinker/reports/blob/master/R/is.url.R
 is.url <-function(x) { 
@@ -41,7 +42,9 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   {
    #Put in soundFile directory if unspecified
   if(missing(dest_folder)){
-      if(is.url(soundFile)){dest_folder=getwd()}else{dest_folder=dirname(soundFile)}}
+      if(is.url(soundFile)){dest_folder=getwd()
+      }else{dest_folder=dirname(soundFile)}
+    }
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it  
   if(is.url(soundFile)){download.file(soundFile,paste0(dest_folder,basename(soundFile)))
     soundFile=paste0(dest_folder,basename(soundFile))}
@@ -57,66 +60,68 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   smplRt<-wav0@samp.rate
   fileDur<-max(length(wav0@left),length(wav0@right))/smplRt  
   if(missing(filterThresh)){filterThresh=0}
-  if(filterThresh!=0){wav0<-afilter(wav0,f=wav0@samp.rate,threshold=filterThresh,plot=F)}
+  if(filterThresh!=0){wav0<-afilter(wav0,f=smplRt,threshold=filterThresh,plot=F,output="Wave")}
   if(!missing(crop)){ #test. If user inputs single digit crop, interpret as first X sec
-    crop=eval(parse(text=crop))
     if(length(crop)==1){crop=c(0,crop)}
   }
   
   if(!missing(crop)&!missing(xLim)){
-    segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
+    if(length(crop)==1){crop=c(0,crop)}
+    if(length(xLim)==1){xLim=c(0,xLim)}
+    segLens <- seq(crop[1],crop[2],xLim[2]-xLim[1])
     indx<- 1:(length(segLens)-1)
     segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
     cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
-    xLim=c(0,as.numeric(xLimResp))
-  }
+  }else
+  {
+    
   
   
   
-  ### For long files, ask user to crop and/or segment dynamic spectrograms
-   if(missing(crop)&fileDur<=5)
-      {crop=c(0,fileDur);cropWav=NA}
-  if(fileDur>5&missing(crop)){
-    cat("\n\n*** File duration is >5sec *** \nProcessor intensive warning: Do you want to use the whole recording to make the dynamic spec? (y/n) ")
-    cropResp=readline(prompt=">>> ")
-    if(tolower(cropResp)=="y"){crop=c(0,fileDur);cropWav=NA}
-    if(tolower(cropResp)=="n"){
-     cat("\n\n*** Choose how to crop your dynamic spectrogram ***\nEnter a number to use only the first X.XX sec \n\tOR\nEnter a range c(x1,x2) where x1 is start time & x2 is stop for a specific time segment")
-      cropResp2=readline(">>> ")
-    crop=eval(parse(text=cropResp2))
-    if(length(crop)==1){crop=c(0,crop)}
+    ### For long files, ask user to crop and/or segment dynamic spectrograms
+     if(missing(crop)&fileDur<=5)
+        {crop=c(0,fileDur);cropWav=NA}
+    if(missing(crop)&fileDur>5){
+      cat("\n\n*** File duration is >5sec *** \nProcessor intensive warning: Do you want to use the whole recording to make the dynamic spec? (y/n) ")
+      cropResp=readline(prompt=">>> ")
+      if(tolower(cropResp)=="y"){crop=c(0,fileDur);cropWav=NA}
+      if(tolower(cropResp)=="n"){
+       cat("\n\n*** Choose how to crop your dynamic spectrogram ***\nEnter a number to use only the first X.XX sec \n\tOR\nEnter a range c(x1,x2) where x1 is start time & x2 is stop for a specific time segment")
+        cropResp2=readline(">>> ")
+      crop=eval(parse(text=cropResp2))
+      if(length(crop)==1){crop=c(0,crop)}
+      }
     }
-  }
- 
-  #crop has been defined at this point
-  cropWid<-crop[2]-crop[1]
-  
-  if(missing(xLim)){
-    # If no spec width provided, but it's a short file, no worries
-    if(cropWid<=5)
-    {xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{ 
-      #if cropped segment is >5s ask to segment (i.e. set xLim)
-      cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\n\tOR\nType a number to combine specs for every X.X sec")
-      xLimResp=readline(">>> ")
-      #user chooses not to segment (no multipage spec)
-    if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{
+   
+    #crop has been defined at this point
+    cropWid<-crop[2]-crop[1]
+    
+    if(missing(xLim)){
+      # If no spec width provided, but it's a short file, no worries
+      if(cropWid<=5)
+      {xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{ 
+        #if cropped segment is >5s ask to segment (i.e. set xLim)
+        cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\n\tOR\nType a number to combine specs for every X.X sec")
+        xLimResp=readline(">>> ")
+        #user chooses not to segment (no multipage spec)
+      if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{
+        #segment the cropped area
+          segLens <- seq(crop[1],crop[2],as.numeric(xLimResp))
+          indx<- 1:(length(segLens)-1)
+          segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
+          cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
+          xLim=c(0,as.numeric(xLimResp))
+      }
+    }}else{
+      #If not missing xLim (was just originally missing crop) 
       #segment the cropped area
-        segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
-        indx<- 1:(length(segLens)-1)
-        segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
-        cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
-        xLim=c(0,as.numeric(xLimResp))
+          segLens <- seq(crop[1],crop[2],xLim[2]-xLim[1])
+          indx<- 1:(length(segLens)-1)
+          segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
+          cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
+          xLim=c(0,as.numeric(xLimResp))
     }
-  }}else{
-    #If not missing xLim (was just originally missing crop) 
-    #segment the cropped area
-        segLens <- unique(c(seq(crop[1],crop[2],as.numeric(xLimResp)),crop))
-        indx<- 1:(length(segLens)-1)
-        segWavs<-lapply(indx,function(i) cutw(wav0,from=segLens[i],to=segLens[i+1],output="Wave"))
-        cropWav<-cutw(wav0,from=crop[1],to=crop[2],output="Wave")
-        xLim=c(0,as.numeric(xLimResp))
   }
-  
   #xLim & crop defined for all cases
   
   if(missing(outFilename)){outFilename=paste0(file_path_sans_ext(basename(soundFile)),".PNG")}
@@ -129,7 +134,8 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   #Are we dealing with a custom or a viridis palette?
   if(length(colPal)==1){isViridis<-T}else{isViridis<-F}
   if(missing(bg)){ 
-    if(isViridis){pal=eval(parse(text=paste0("viridis::",colPal)));bg=pal(1)}else{bg=colPal[1]}}#set background color as palette level 1 if missing
+    if(isViridis){pal=eval(parse(text=paste0("viridis::",colPal)));bg=pal(1)}else{bg=colPal[1]}
+    }#set background color as palette level 1 if missing
   if(missing(wl)){wl=512}
   if(missing(ovlp)){ovlp=90}
   if(missing(wn)){wn="blackman"}
@@ -167,7 +173,7 @@ for (i in 1:length(segWavs))
 }#end for loop
 
 plot(specParams[[1]]$spec)
-specParams<-append(specParams,list(segWavs=segWavs,cropWav=cropWav))
+specParams<-append(specParams,list(segWavs=segWavs,cropWav=cropWav,cropWid=cropWid))
 return(specParams)
 }#end testSpec
 
@@ -176,14 +182,24 @@ return(specParams)
 
 #############################################################
 #Function for outputting a video of spectrogram
-rspectVid<-function(specParams,vidName,framerate,highlightCol,... )
+
+# specParams   an object returned from testSpec()
+# vidName      expects "FileName.mp4"; if not supplied will be named after the file you used in testSpec()
+# framerate    by default, set to 30
+# highlightCol default "gray50"
+# cursorCol    default "white"
+# delTemps=T   By default, deletes temporary files (specs & WAV files used to create video spec) after .mp4 generated
+
+rspectVid<-function(specParams,vidName,framerate,highlightCol,cursorCol,delTemps=T,... )
 {
 if(missing(framerate)){framerate=30}
 if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)}else{
     iName0<-file_path_sans_ext(specParams[[1]]$outFilename)
-    vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")}#base name for output, sans extension
+    vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")
+    }#base name for output, sans extension
 if(missing(highlightCol)){highlightCol="gray50"}
-   
+if(missing(cursorCol)){cursorCol="white"}
+     
   tempdir<-paste0(specParams[[1]]$dest_folder,"temp/")
   dir.create(tempdir,showWarnings=F)
   #create list of names for WAV audio segments
@@ -191,10 +207,12 @@ if(missing(highlightCol)){highlightCol="gray50"}
   #export wav files if spec is to be segmented; not necessary if wav is unaltered
   if(length(specParams)>1){
     cat(paste0("Temporary files saved at: ",tempdir))
-    invisible(
-      lapply(1:length(specParams$segWavs), function(x){fn=outWAV[[x]]
-          savewav(specParams$segWavs[[x]],filename=fn)
-          cat(paste0("\n",fn))}))}
+    segWavOUT=paste0(tempdir,iName0,"_combinedSegs.wav")
+    savewav(specParams$cropWav,filename=segWavOUT)}
+    # invisible(
+    #   lapply(1:length(specParams$segWavs), function(x){fn=outWAV[[x]]
+    #       savewav(specParams$segWavs[[x]],filename=fn)
+    #       cat(paste0("\n",fn))}))}
   
 for(i in 1:length(specParams$segWavs)){
   #Address missing variables
@@ -216,23 +234,47 @@ for(i in 1:length(specParams$segWavs)){
   played<-tibble(xmin=cursor,xmax=rep(specParams[[i]]$xLim[2],length(cursor)),ymin=rep(specParams[[i]]$yLim[1],length(cursor)),ymax=rep(specParams[[i]]$yLim[2], length(cursor)))
   
   #Make ggplot overlay of highlight box on spectrogram
-  vidSegment<-ggplot(played)+annotation_custom(rasterGrob(spec_PNG,width = unit(1,"npc"), height = unit(1,"npc")),- Inf, Inf, -Inf, Inf)+geom_rect(aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax),fill=highlightCol,alpha=.5)+geom_segment(aes(x=xmin,xend=xmin,y=ymin,yend=ymax),col="white")+theme_void()  +transition_reveal(xmin)
+  vidSegment<-ggplot(played)+annotation_custom(rasterGrob(spec_PNG,width = unit(1,"npc"), height = unit(1,"npc")),- Inf, Inf, -Inf, Inf)+geom_rect(aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax),fill=highlightCol,alpha=.5)+geom_segment(aes(x=xmin,xend=xmin,y=ymin,yend=ymax),col=cursorCol)+theme_void()  +transition_reveal(xmin)
 
+#save Audio File with mp3 only if not segmented
+if(length(outWAV)==1){
 animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=specParams[[i]]$xLim[2],width=spec_width_px,height=spec_height_px,fps=framerate) #Need to save audio for segments!!
+}else{
+  animate(vidSegment,renderer=av_renderer(outTmpVid),duration=specParams[[i]]$xLim[2],width=spec_width_px,height=spec_height_px,fps=framerate) #Need to save audio for segments!!
+  }
 }
 
   #if necessary, combine segments
   if(length(outWAV)>1){
-    tmpPaths<-paste0("file ",paste0("'",unlist(file_path_sans_ext(outWAV)),".ts'"))
+    tmpPaths<-paste0("file ",paste0("'",unlist(file_path_sans_ext(outWAV)),".mp4' duration ",specParams[[i]]$xLim[2]))
     writeLines(tmpPaths,paste0(tempdir,"wavSegments.txt"))
-    #Unfortunately, can't just slap MP4 files together, so have to have an intermediate .ts file step
-    ffmpegTransCode<-paste0(ffmpeg_exec(),' -y -i "',unlist(file_path_sans_ext(outWAV)),'.mp4" -c copy -f mpegts "',unlist(file_path_sans_ext(outWAV)),'.ts"')
-    invisible(sapply(ffmpegTransCode,system))
+    #Turns out this was wrong or has been fixed!! MP4s CAN be combined!
+    # #Unfortunately, can't just slap MP4 files together, so have to have an intermediate .ts file step
+    # ffmpegTransCode<-paste0(ffmpeg_exec(),' -y -i "',unlist(file_path_sans_ext(outWAV)),'.mp4" -vsync 1 -c copy "',unlist(file_path_sans_ext(outWAV)),'.mkv"')
+    # invisible(sapply(ffmpegTransCode,system))
     #now combine .ts files into .mp4
-   system(paste0(ffmpeg_exec(),' -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -codec copy "',vidName,'"') )
+   
+    #For matching audio & video lengths:
+    cropSmplRt<-specParams$cropWav@samp.rate
+    cropFileDur<-max(length(specParams$cropWav@left),length(specParams$cropWav@right))/cropSmplRt
+    cropFileDur2<-seconds_to_period(cropFileDur)
+    cropFileDur3<-sprintf(fmt='%02d:%02d:%2.3f',hour(cropFileDur2),minute(cropFileDur2),second(cropFileDur2))
+    
+    system(paste0(ffmpeg_exec(),' -ss 0 -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -codec copy -t ',cropFileDur3,' "',paste0(tempdir,"deleteme.mp4"),'"') )
+    #Add audio track (couldn't figure how to combine these steps)
+    system(paste0(ffmpeg_exec(),' -y -i "',paste0(tempdir,"deleteme.mp4"),'" -i "',segWavOUT,'"  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -ac 2 -b:a 192k "',vidName,'"'))
+    
+    #This doesn't work to combine the steps...don't understand why :(
+    # system(paste0(ffmpeg_exec(),' -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -i "',paste0(tempdir,"wavSegments.txt"),'" -vcodec copy -acodec aac -map 0:0 -map 0:1 "',vidName,'"') )
+     
   }
 
   cat("\n\nAll done!\n")
   cat(paste0("file saved @",vidName))
   system(paste0('open "',vidName,'"'))
+  
+  if(delTemps){unlink(tempdir,recursive=T);print(paste0("FYI temporary file directory deleted @ ",tempdir))}
+  
 }#end rspectVid definition
+
+
