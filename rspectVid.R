@@ -192,6 +192,14 @@ return(specParams)
 
 rspectVid<-function(specParams,vidName,framerate,highlightCol,cursorCol,delTemps=T,... )
 {
+if(!have_ffmpeg_exec()){
+  cat("\n*****This script needs ffmpeg to work*****\n")
+  cat("If you have a mac, with HomeBrew installed, you can do fix this easily in terminal with:\n")
+  cat("\n>\tbrew install ffmpeg\n")
+  cat("\nIf not, download and install it from ffmpeg.org")
+  }else
+{
+
 if(missing(framerate)){framerate=30}
 if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)}else{
     iName0<-file_path_sans_ext(specParams[[1]]$outFilename)
@@ -274,7 +282,7 @@ animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=sp
   system(paste0('open "',vidName,'"'))
   
   if(delTemps){unlink(tempdir,recursive=T);print(paste0("FYI temporary file directory deleted @ ",tempdir))}
-  
+}#end else which passed FFMPEG check
 }#end rspectVid definition
 
 
