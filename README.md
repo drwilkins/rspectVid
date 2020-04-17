@@ -16,7 +16,7 @@ rspectVid(params,delTemps=F)
 #exports an .mp4 to the same file directory by default
 ```
 [![Static Spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/Femalebarnswallow1.PNG)](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
-[Link to Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
+[Link to female barn swallow Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
 
 
 
@@ -39,8 +39,8 @@ p<-testSpec("http://www.oceanmammalinst.org/songs/hmpback3.wav",yLim=c(0,.7),cro
 rspectVid(p)
 #Voila 🐋
 ```
-[![Humpback whale song spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/hmpbackSpeck.png)](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/hmpback3.mp4)
-
+[![Humpback whale song spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/hmpbackSpec.png)](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/hmpback3.mp4)
+[Download whale song spec here](https://github.com/drwilkins/rspectVid/blob/master/web/hmpback3.mp4?raw=true)
 
 ### Now also supports .mp3 files (web or local) and multi-page dynamic spectrograms (i.e. cropping and segmenting spectrograms from larger recording files)
 
@@ -49,5 +49,5 @@ rspectVid(p)
 n=testSpec("https://www.xeno-canto.org/sounds/uploaded/SPMWIWZKKC/XC490771-190804_1428_CONI.mp3",crop=20,xLim=4,colPal = c("white","black"))
 rspectVid(n,highlightCol = "#d1b0ff",cursorCol = "#7817ff")
 ```
-[![Nighthawk call multipage dynamic spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/nighthawkSpec.png)]((https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/XC490771-190804_1428_CONI.mp4))
-[Download nighthawk call spec here](https://github.com/drwilkins/rspectVid/blob/master/XC490771-190804_1428_CONI.mp4?raw=true)
+[![Nighthawk call multipage dynamic spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/nighthawkSpec.png)](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/XC490771-190804_1428_CONI.mp4)
+[Download nighthawk call spec here](https://github.com/drwilkins/rspectVid/blob/master/web/XC490771-190804_1428_CONI.mp4?raw=true)
