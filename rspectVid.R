@@ -31,14 +31,16 @@ if(Sys.info()["sysname"]=="Darwin"){setWavPlayer("/usr/bin/afplay")}
   # *xLim: is the time limit in seconds for all spectrograms (defaults to WAV file length, unless file duration >5s)
   # *yLim: is the frequency limits (y-axis); default is c(0,10) aka 0-10kHz
   # *ampTrans: amplitude transform; defaults to identity (actual dB values); specify a decimal number for the lambda value of scales::modulus_trans(); 2.5 is a good place to start. (This amplifies your loud values the most, while not increasing background noise much at all)
-  # filterThresh: the threshold as a % to cut out of recording (try 5 to start); default= no filtering (high data loss with this)
+  # *min_db: the minimum decibel (quietest sound) to include in the spec; defaults to -30 (-40 would include quieter sounds; -20 would cut out all but very loud sounds)
+  # filter: apply a bandpass filter? Defaults to none. Expects 'c(0,2)' where sound from 0 to 2kHz would be filtered out 
+  # ampThresh: amplitude threshold as a % to cut out of recording (try 5 to start); default= no filtering (high data loss with this; not recommended; play with min_dB first)
   # bg:background color (defaults to 1st value of chosen palette)
   # *wl: window length for the spectrogram (low vals= higher temporal res; high vals= higher freq. res). Default 512 is a good tradeoff
   # ovlp: how much overlap (as %) between sliding windows to generate spec? Default 90 looks good, but takes longer
   # wn: window name (slight tweaks on algorithm that affect smoothness of output) see ?spectro
   # colbins: default 30: increasing can smooth the color contours, but take longer to generate spec
 
-testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotLegend,onlyPlotSpec,ampTrans,filterThresh,min_dB,bg,wl,ovlp,wn,specWidth,specHeight,colbins,...)
+testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotLegend,onlyPlotSpec,ampTrans,ampThresh,min_dB,bg,wl,ovlp,wn,specWidth,specHeight,colbins,filter,...)
   {
    #Put in soundFile directory if unspecified
   if(missing(dest_folder)){
@@ -58,10 +60,12 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
       }
   
   wav0<-readWave(soundFile)
+  if(!missing(filter)){wav0=ffilter(wave=wav0,from=filter[1]*1000,to=filter[2]*1000,bandpass=F,output="Wave")}
+  
   smplRt<-wav0@samp.rate
   fileDur<-max(length(wav0@left),length(wav0@right))/smplRt  
-  if(missing(filterThresh)){filterThresh=0}
-  if(filterThresh!=0){wav0<-afilter(wav0,f=smplRt,threshold=filterThresh,plot=F,output="Wave")}
+  if(missing(ampThresh)){ampThresh=0}
+  if(ampThresh!=0){wav0<-afilter(wav0,f=smplRt,threshold=ampThresh,plot=F,output="Wave")}
   
   if(missing(xLim)&!missing(crop)){ #test. If user inputs single digit crop, interpret as first X sec
     if(length(crop)==1){if(crop==F){crop <- c(0,fileDur)}else{crop <- c(0,crop)}}
@@ -171,7 +175,7 @@ for (i in 1:length(segWavs))
       cat("\nFor segmented spectrogram, only segment 1 shown\n")}
     }
 #return spec parameters
-    specParams[[i]]=list(soundFile=soundFile,dest_folder=dest_folder,outFilename=outFilename,crop=crop,colPal=colPal,xLim=xLim,yLim=yLim,plotLegend=plotLegend,onlyPlotSpec=onlyPlotSpec,ampTrans=ampTrans,filterThresh=filterThresh,min_dB=min_dB,bg=bg,wl=wl,ovlp=ovlp,wn=wn,specWidth=specWidth,specHeight=specHeight,colbins=colbins,fileDur=fileDur,soundDur=unlist(soundDur),spec=G5)
+    specParams[[i]]=list(soundFile=soundFile,dest_folder=dest_folder,outFilename=outFilename,crop=crop,colPal=colPal,xLim=xLim,yLim=yLim,plotLegend=plotLegend,onlyPlotSpec=onlyPlotSpec,ampTrans=ampTrans,ampThresh=ampThresh,min_dB=min_dB,bg=bg,wl=wl,ovlp=ovlp,wn=wn,specWidth=specWidth,specHeight=specHeight,colbins=colbins,fileDur=fileDur,soundDur=unlist(soundDur),spec=G5)
 }#end for loop
 
 plot(specParams[[1]]$spec)
@@ -272,7 +276,8 @@ animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=sp
     
     system(paste0(ffmpeg_exec(),' -ss 0 -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -codec copy -t ',cropFileDur3,' "',paste0(tempdir,"deleteme.mp4"),'"') )
     #Add audio track (couldn't figure how to combine these steps)
-    system(paste0(ffmpeg_exec(),' -y -i "',paste0(tempdir,"deleteme.mp4"),'" -i "',segWavOUT,'"  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -ac 2 -b:a 192k "',vidName,'"'))
+    # the -shortest parameter will cut the audio off if the -xLim (page width) value leaves a dangling remainder (i.e. if crop =8 & xLim=3, and you have a partial page of 2 leftover...currently doesn't accommodate that)
+    system(paste0(ffmpeg_exec(),' -y -i "',paste0(tempdir,"deleteme.mp4"),'" -i "',segWavOUT,'"  -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -ac 2 -b:a 192k -shortest "',vidName,'"'))
     
     #This doesn't work to combine the steps...don't understand why :(
     # system(paste0(ffmpeg_exec(),' -y -f concat -safe 0 -i "',paste0(tempdir,"wavSegments.txt"),'" -i "',paste0(tempdir,"wavSegments.txt"),'" -vcodec copy -acodec aac -map 0:0 -map 0:1 "',vidName,'"') )
