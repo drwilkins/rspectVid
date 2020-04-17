@@ -15,7 +15,7 @@ params<-testSpec("data/Femalebarnswallow1.wav")
 rspectVid(params,delTemps=F) 
 #exports an .mp4 to the same file directory by default
 ```
-[![Static Spectrogram](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/Femalebarnswallow1.PNG)](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
+[![Static Spectrogram of a female barn swallow song](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/Femalebarnswallow1.png)](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
 [Link to female barn swallow Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
 
 
