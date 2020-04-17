@@ -48,9 +48,10 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
       }else{dest_folder=dirname(file_path_as_absolute(soundFile))}
     }
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it  
-  if(is.url(soundFile)){download.file(soundFile,paste0(dest_folder,basename(soundFile)))
-  
-  soundFile=paste0(dest_folder,basename(soundFile))}
+  if(is.url(soundFile)){
+    download.file(soundFile,paste0(dest_folder,basename(soundFile)))
+    soundFile=paste0(dest_folder,basename(soundFile))
+    }
  
   #Convert MP3s to WAV
   if(file_ext(soundFile)=="mp3"){
@@ -86,11 +87,11 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   
     ### For long files, ask user to crop and/or segment dynamic spectrograms
      if(missing(crop)&fileDur<=5)
-        {crop=c(0,fileDur);cropWav=NA}
+        {crop=c(0,fileDur);cropWav=c(0,fileDur)}
     if(missing(crop)&fileDur>5){
       cat("\n\n*** File duration is >5sec *** \nProcessor intensive warning: Do you want to use the whole recording to make the dynamic spec? (y/n) ")
       cropResp=readline(prompt=">>> ")
-      if(tolower(cropResp)=="y"){crop=c(0,fileDur);cropWav=NA}
+      if(tolower(cropResp)=="y"){crop=c(0,fileDur);cropWav=c(0,fileDur)}
       if(tolower(cropResp)=="n"){
        cat("\n\n*** Choose how to crop your dynamic spectrogram ***\nEnter a number to use only the first X.XX sec \n\tOR\nEnter a range c(x1,x2) where x1 is start time & x2 is stop for a specific time segment")
         cropResp2=readline(">>> ")
@@ -105,12 +106,12 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
     if(missing(xLim)){
       # If no spec width provided, but it's a short file, no worries
       if(cropWid<=5)
-      {xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{ 
+      {xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=c(0,fileDur)}else{ 
         #if cropped segment is >5s ask to segment (i.e. set xLim)
         cat("\n\n*** Segment the dynamic spectrogram? ***\nPress ENTER to make a single, zoomed-out spec for whole recording\n\tOR\nType a number to combine specs for every X.X sec")
         xLimResp=readline(">>> ")
         #user chooses not to segment (no multipage spec)
-      if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=NA}else{
+      if(xLimResp==""){xLim=crop;segWavs=list(wav0);segLens=xLim;cropWav=c(0,fileDur)}else{
         #segment the cropped area
           segLens <- seq(crop[1],crop[2],as.numeric(xLimResp))
           indx<- 1:(length(segLens)-1)
@@ -207,7 +208,9 @@ if(!have_ffmpeg_exec()){
 {
 
 if(missing(framerate)){framerate=30}
-if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)}else{
+if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)
+    vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")
+    }else{
     iName0<-file_path_sans_ext(specParams[[1]]$outFilename)
     vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")
     }#base name for output, sans extension
@@ -217,9 +220,9 @@ if(missing(cursorCol)){cursorCol="white"}
   tempdir<-paste0(specParams[[1]]$dest_folder,"temp/")
   dir.create(tempdir,showWarnings=F)
   #create list of names for WAV audio segments
-  outWAV<-if(length(specParams$segWavs)==1){list(paste0(tempdir,iName0,".wav"))}else{lapply(1:length(specParams$segWavs),function(x) {paste0(tempdir,iName0,"_",x,"_.wav")})}
+  outWAV<-if(length(specParams$segWavs)==1){list(specParams[[1]]$soundFile)}else{lapply(1:length(specParams$segWavs),function(x) {paste0("'",tempdir,iName0,"_",x,"_.wav'")})} #enclosing '' necessary to accommodate filenames with spaces
   #export wav files if spec is to be segmented; not necessary if wav is unaltered
-  if(length(specParams)>1){
+  if(length(specParams$segWavs)>1){
     cat(paste0("Temporary files saved at: ",tempdir))
     segWavOUT=paste0(tempdir,iName0,"_combinedSegs.wav")
     savewav(specParams$cropWav,filename=segWavOUT)}
@@ -252,7 +255,7 @@ for(i in 1:length(specParams$segWavs)){
 
 #save Audio File with mp3 only if not segmented
 if(length(outWAV)==1){
-animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=specParams[[i]]$xLim[2],width=spec_width_px,height=spec_height_px,fps=framerate) #Need to save audio for segments!!
+animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=specParams[[i]]$xLim[2],width=spec_width_px,height=spec_height_px) #Need to save audio for segments!!
 }else{
   animate(vidSegment,renderer=av_renderer(outTmpVid),duration=specParams[[i]]$xLim[2],width=spec_width_px,height=spec_height_px,fps=framerate) #Need to save audio for segments!!
   }
