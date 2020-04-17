@@ -44,3 +44,4 @@ rspectVid(p)
 n=testSpec("https://www.xeno-canto.org/sounds/uploaded/SPMWIWZKKC/XC490771-190804_1428_CONI.mp3",crop=20,xLim=4,colPal = c("white","black"))
 rspectVid(n,highlightCol = "#d1b0ff",cursorCol = "#7817ff")
 ```
+[Download nighthawk call spec here](https://github.com/drwilkins/rspectVid/blob/master/XC490771-190804_1428_CONI.mp4?raw=true)

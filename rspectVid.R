@@ -27,7 +27,7 @@ if(Sys.info()["sysname"]=="Darwin"){setWavPlayer("/usr/bin/afplay")}
   # dest_folder: needs to be like "figures/spectrograms/" to refer within working directory
   # if outFilename is left out, will use input (.wav) name in output filename
   # *colPal: color palette; one of "viridis","magma","plasma","inferno","cividis" from the viridis package (see: https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html) OR a 2 value vector (e.g. c("white","black)), defining the starts and ends of a custom color gradient
-  # *crop: subset of recording to include; if number, interpreted as first X.X sec; if c(X1,X2), interpreted as specific time interval in sec
+  # *crop: subset of recording to include; if crop=F, use whole file; if number, interpreted as crop first X.X sec; if c(X1,X2), interpreted as specific time interval in sec
   # *xLim: is the time limit in seconds for all spectrograms (defaults to WAV file length, unless file duration >5s)
   # *yLim: is the frequency limits (y-axis); default is c(0,10) aka 0-10kHz
   # *ampTrans: amplitude transform; defaults to identity (actual dB values); specify a decimal number for the lambda value of scales::modulus_trans(); 2.5 is a good place to start. (This amplifies your loud values the most, while not increasing background noise much at all)
@@ -43,17 +43,18 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
    #Put in soundFile directory if unspecified
   if(missing(dest_folder)){
       if(is.url(soundFile)){dest_folder=getwd()
-      }else{dest_folder=dirname(soundFile)}
+      }else{dest_folder=dirname(file_path_as_absolute(soundFile))}
     }
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it  
   if(is.url(soundFile)){download.file(soundFile,paste0(dest_folder,basename(soundFile)))
-    soundFile=paste0(dest_folder,basename(soundFile))}
+  
+  soundFile=paste0(dest_folder,basename(soundFile))}
  
   #Convert MP3s to WAV
   if(file_ext(soundFile)=="mp3"){
       print("***Converting mp3(s) to wav***")
-      try(mp32wav(path=dirname(soundFile)))
-      soundFile=paste0(dirname(soundFile),"/",file_path_sans_ext(basename(soundFile)),".wav")
+      try(mp32wav(path=dirname(file_path_as_absolute(soundFile))))
+      soundFile=paste0(file_path_sans_ext(file_path_as_absolute(soundFile)),".wav")
       }
   
   wav0<-readWave(soundFile)
@@ -61,12 +62,13 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
   fileDur<-max(length(wav0@left),length(wav0@right))/smplRt  
   if(missing(filterThresh)){filterThresh=0}
   if(filterThresh!=0){wav0<-afilter(wav0,f=smplRt,threshold=filterThresh,plot=F,output="Wave")}
-  if(!missing(crop)){ #test. If user inputs single digit crop, interpret as first X sec
-    if(length(crop)==1){crop=c(0,crop)}
+  
+  if(missing(xLim)&!missing(crop)){ #test. If user inputs single digit crop, interpret as first X sec
+    if(length(crop)==1){if(crop==F){crop <- c(0,fileDur)}else{crop <- c(0,crop)}}
   }
   
   if(!missing(crop)&!missing(xLim)){
-    if(length(crop)==1){crop=c(0,crop)}
+    if(length(crop)==1){if(crop==F){crop <- c(0,fileDur)}else{crop <- c(0,crop)}}
     if(length(xLim)==1){xLim=c(0,xLim)}
     segLens <- seq(crop[1],crop[2],xLim[2]-xLim[1])
     indx<- 1:(length(segLens)-1)
