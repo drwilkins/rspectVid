@@ -48,6 +48,7 @@ testSpec<-function(soundFile,dest_folder,outFilename,colPal,crop,xLim,yLim,plotL
       }else{dest_folder=dirname(file_path_as_absolute(soundFile))}
     }
   if(!grepl("/$",dest_folder)){dest_folder=paste0(dest_folder,"/")}#if dest_folder missing terminal /, add it  
+  
   if(is.url(soundFile)){
     download.file(soundFile,paste0(dest_folder,basename(soundFile)))
     soundFile=paste0(dest_folder,basename(soundFile))
@@ -208,7 +209,8 @@ if(!have_ffmpeg_exec()){
 {
 
 if(missing(framerate)){framerate=30}
-if(!missing(vidName)){iName0=tools::file_path_sans_ext(vidName)
+if(!missing(vidName)){
+    iName0=tools::file_path_sans_ext(vidName)
     vidName=paste0(specParams[[1]]$dest_folder,iName0,".mp4")
     }else{
     iName0<-file_path_sans_ext(specParams[[1]]$outFilename)
@@ -263,7 +265,7 @@ animate(vidSegment,renderer=av_renderer(outTmpVid,audio=outWAV[[i]]),duration=sp
 
   #if necessary, combine segments
   if(length(outWAV)>1){
-    tmpPaths<-paste0("file ",paste0("'",unlist(file_path_sans_ext(outWAV)),".mp4' duration ",specParams[[i]]$xLim[2]))
+    tmpPaths<-paste0("file ",gsub(".wav","",unlist(outWAV)),".mp4 duration ",specParams[[i]]$xLim[2])
     writeLines(tmpPaths,paste0(tempdir,"wavSegments.txt"))
     #Turns out this was wrong or has been fixed!! MP4s CAN be combined!
     # #Unfortunately, can't just slap MP4 files together, so have to have an intermediate .ts file step
