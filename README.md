@@ -74,5 +74,6 @@ n=testSpec(song,crop=20,xLim=4,colPal = c("white","black"))
 rspectVid(n,vidName="nightHawk" ,highlightCol = "#d1b0ff",cursorCol = "#7817ff",destFolder="web/")
 ```
 
-## Nighthawk multipage dynamic spec
-<iframe src="https://player.vimeo.com/video/432724657" width="640" height="564" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+### Nighthawk multipage dynamic spec
+<iframe src="https://player.vimeo.com/video/432724657" width="640" height="564" margin="0" padding="0" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+
