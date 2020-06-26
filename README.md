@@ -1,5 +1,6 @@
 # rspectVid
-Script for generating a video spectrogram from an audio file
+Script for generating a dynamic spectrogram from an audio file
+Now supports multipaged videos with sliding highlight (akin to Audition)
 
 Workflow: 
 1. Tweak your spectrogram settings using the testSpec() function, storing results in variable
@@ -11,12 +12,16 @@ Workflow:
 Example usage:
 ```
 #takes .wav or .mp3
-params<-testSpec("data/Femalebarnswallow1.wav") 
-rspectVid(params,delTemps=F) 
+params<-testSpec("data/Femalebarnswallow1.wav", onlyPlotSpec=F) 
+ggsave("web/femStaticSongSpec.png")
+rspectVid(params,vidName="femDynamicSongSpec",destFolder="web/") 
 #exports an .mp4 to the same file directory by default
 ```
-[![Static Spectrogram of a female barn swallow song](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/Femalebarnswallow1.png)](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
-[Link to female barn swallow Dynamic Spectrogram](https://github.com/drwilkins/rspectVid/blob/master/web/FemaleBarnSwallow1.mp4)
+### Static spectrogram of a female barn swallow song
+![Static Spectrogram of a female barn swallow song](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/femStaticSongSpec.png)
+
+### Dynamic spectrogram of a female barn swallow song
+<iframe src="https://player.vimeo.com/video/432706727" width="640" height="564" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
 
 
 
