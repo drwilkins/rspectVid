@@ -8,7 +8,7 @@
 #Install/load pacman
 if(!require(pacman)){install.packages("pacman");require(pacman)}
 #Install/load tons of packages
-p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools,devtools,ari,lubridate,progress)
+p_load(ggplot2,seewave,tuneR,viridis,scales,gganimate,av,grid,tidyverse,png,warbleR,tools,devtools,ari)
 
 #set WavPlayer if using Mac; otherwise, mixed results trying to play sounds from R
 if(Sys.info()["sysname"]=="Darwin"){setWavPlayer("/usr/bin/afplay")}

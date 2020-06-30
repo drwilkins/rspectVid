@@ -31,7 +31,7 @@ rspectVid(params,vidName="femDynamicSongSpec",destFolder="web/")
 ![Static Spectrogram of a female barn swallow song](https://raw.githubusercontent.com/drwilkins/rspectVid/master/web/femStaticSongSpec.png)
 
 ### Dynamic spectrogram of a female barn swallow song
-<iframe src="https://player.vimeo.com/video/432706727" width="640" height="564" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+<iframe src="https://player.vimeo.com/video/432706727" style="border:0px" width="910" height="303" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
 
 ## Now brighten the spec using the ampTrans parameter
 * ampTrans=3 is a nonlinear signal booster. Basically collapses the difference between loudest and quietest values (higher values= brighter specs); 1 (default) means no transformation
@@ -42,7 +42,7 @@ rspectVid(params,vidName="femDynamicSongSpec",destFolder="web/")
 p2<-testSpec("data/Femalebarnswallow1.wav",min_dB=-35, onlyPlotSpec=F,bgFlood=T,ampTrans=3) 
 rspectVid(p2,destFolder="web/") 
 ```
-<iframe src="https://player.vimeo.com/video/432727824" width="640" height="564" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+<iframe src="https://player.vimeo.com/video/432727824" style="border:0px" width="910" height="303" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
 
 
 ### Now also supports .mp3 files (web or local) and multi-page dynamic spectrograms (i.e. cropping and segmenting spectrograms from larger recording files)
@@ -64,7 +64,7 @@ rspectVid(p,destFolder="web/",delTemps=F)
 ![Humpback whale song spectrogram](web/humpback.png)
 
 ## Dynamic multipage whale song spectrogram
-<iframe src="https://player.vimeo.com/video/432723336" width="640" height="564" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+<iframe src="https://player.vimeo.com/video/432723336" style="border:0px" frameborder="0" height=303 width=910 allow="autoplay; fullscreen" allowfullscreen></iframe>
 
 
 #### Example using Xeno-Canto to generate a multi-page dynamic spectrogram of a common nighthawk call (w/ different color scheme)
@@ -73,7 +73,7 @@ song="https://www.xeno-canto.org/sounds/uploaded/SPMWIWZKKC/XC490771-190804_1428
 n=testSpec(song,crop=20,xLim=4,colPal = c("white","black"))
 rspectVid(n,vidName="nightHawk" ,highlightCol = "#d1b0ff",cursorCol = "#7817ff",destFolder="web/")
 ```
-
+<div>
 ### Nighthawk multipage dynamic spec
-<iframe src="https://player.vimeo.com/video/432724657" width="640" height="564" margin="0" padding="0" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
-
+<iframe src="https://player.vimeo.com/video/432724657" style="border:0px; width: 100%;" height=303 width=910  margin="0" padding="0" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</div>
